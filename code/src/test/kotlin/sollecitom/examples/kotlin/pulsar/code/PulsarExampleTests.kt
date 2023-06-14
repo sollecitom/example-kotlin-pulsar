@@ -6,7 +6,6 @@ import kotlinx.coroutines.debug.DebugProbes
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.test.runTest
@@ -50,28 +49,49 @@ private class PulsarExampleTests {
     }
 
     @Test
-    fun `something with Pulsar`() = runTest(timeout = timeout) {
+    fun `using the standard Java Pulsar API`() = runTest(timeout = timeout) {
 
         val schema = Schema.STRING
-        val topic = PulsarTopic.persistent("tenant", "namespace", "some-topic")
+        val topic = PulsarTopic.persistent("tenant", "namespace", "some-topic-1")
         pulsarAdmin.ensureTopicWorks(topic = topic, schema = schema)
-        val producer = pulsarClient.newProducer(schema) { topic(topic.fullName) }
-        val consumer = pulsarClient.newConsumer(schema) { topic(topic.fullName).subscriptionName("a-subscription") }
+        val producer = pulsarClient.newProducer(schema).topic(topic.fullName).createAsync().await()
+        val consumer = pulsarClient.newConsumer(schema).topic(topic.fullName).subscriptionName("a-subscription-1").subscribeAsync().await()
         val message = "Hello Pulsar!"
 
         producer.sendAsync(message).await()
+        val received = consumer.receiveAsync().await()
+
+        expectThat(received.value).isEqualTo(message)
+    }
+
+    @Test
+    fun `basic string messages with Pulsar`() = runTest(timeout = timeout) {
+
+        val schema = Schema.STRING
+        val topic = PulsarTopic.persistent("tenant", "namespace", "some-topic-2")
+        pulsarAdmin.ensureTopicWorks(topic = topic, schema = schema)
+        val producer = pulsarClient.newProducer(schema) { topic(topic) }
+        val consumer = pulsarClient.newConsumer(schema) { topic(topic).subscriptionName("a-subscription-2") }
+        val message = "Hello Pulsar!"
+
+        producer.sendSuspending(message)
         val received = consumer.messages.first()
 
         expectThat(received.value).isEqualTo(message)
     }
 }
 
-suspend fun <T> Consumer<T>.receiveMessage(): Message<T> = withContext(Dispatchers.VirtualThreads) { receive() }
+suspend fun <T> Producer<T>.sendSuspending(message: T): MessageId = withContext(Dispatchers.VirtualThreads) { send(message) }
+suspend fun <T> TypedMessageBuilder<T>.sendSuspending(): MessageId = withContext(Dispatchers.VirtualThreads) { send() }
+fun <T> ProducerBuilder<T>.topic(topic: PulsarTopic): ProducerBuilder<T> = topic(topic.fullName)
+
+suspend fun <T> Consumer<T>.receiveSuspending(): Message<T> = withContext(Dispatchers.VirtualThreads) { receive() }
+fun <T> ConsumerBuilder<T>.topic(topic: PulsarTopic): ConsumerBuilder<T> = topic(topic.fullName)
 
 val <T> Consumer<T>.messages: Flow<Message<T>>
     get() = flow {
         while (currentCoroutineContext().isActive) {
-            val message = receiveMessage()
+            val message = receiveSuspending()
             emit(message)
         }
     }
