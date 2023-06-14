@@ -6,6 +6,8 @@ val versionCatalogName: String by settings
 module("code")
 module("test", "utils")
 module("kotlin", "extensions")
+module("messaging", "domain")
+module("pulsar", "domain")
 module("pulsar", "test", "utils")
 
 fun module(vararg pathSegments: String) {

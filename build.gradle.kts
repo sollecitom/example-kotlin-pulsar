@@ -56,7 +56,7 @@ allprojects {
             showStandardStreams = false
             exceptionFormat = TestExceptionFormat.FULL
         }
-        jvmArgs = listOf("-XX:+AllowRedefinitionToAddDeleteMethods")
+        jvmArgs = listOf("-XX:+AllowRedefinitionToAddDeleteMethods", "--enable-preview")
     }
 
     subprojects {

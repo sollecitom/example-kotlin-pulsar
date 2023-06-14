@@ -1,21 +1,15 @@
 package sollecitom.examples.kotlin.pulsar.code
 
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.debug.DebugProbes
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.withContext
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
-import reactor.blockhound.BlockHound
-import reactor.blockhound.BlockingOperationError
-import sollecitom.examples.kotlin.pulsar.test.utils.admin
-import sollecitom.examples.kotlin.pulsar.test.utils.client
-import sollecitom.examples.kotlin.pulsar.test.utils.newPulsarContainer
-import strikt.api.expect
-import strikt.api.expectThrows
+import sollecitom.examples.kotlin.pulsar.pulsar.domain.topic.PulsarTopic
+import sollecitom.examples.kotlin.pulsar.test.utils.*
+import strikt.api.expectThat
 import strikt.assertions.isTrue
 import kotlin.time.Duration.Companion.seconds
 
@@ -29,7 +23,6 @@ private class PulsarExampleTests {
 
     @BeforeAll
     fun beforeAll() {
-        BlockHound.builder().loadIntegrations().install()
         DebugProbes.install()
         pulsar.start()
     }
@@ -45,21 +38,9 @@ private class PulsarExampleTests {
     @Test
     fun `something with Pulsar`() = runTest(timeout = timeout) {
 
-        expect {
-            that(true) {
-                isTrue()
-            }
-        }
-    }
+        val topic = PulsarTopic.persistent("tenant", "namespace", "some-topic")
 
-    @Test
-    @Suppress("BlockingMethodInNonBlockingContext")
-    fun `blockhound works correctly`() = runTest(timeout = timeout) {
-
-        expectThrows<BlockingOperationError> {
-            withContext(Dispatchers.Default) {
-                Thread.sleep(1)
-            }
-        }
+        pulsarAdmin.ensureTopicWorks(topic)
+        expectThat(true).isTrue()
     }
 }
