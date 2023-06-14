@@ -1,28 +1,29 @@
-package sollecitom.examples.kotlin.pulsar.test.utils
+package sollecitom.examples.kotlin.pulsar.pulsar.domain.client.admin
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.admin.PulsarAdminException
-import org.apache.pulsar.client.api.Schema
+import org.apache.pulsar.client.api.*
 import org.apache.pulsar.common.policies.data.AutoTopicCreationOverride
 import org.apache.pulsar.common.policies.data.SchemaCompatibilityStrategy
 import org.apache.pulsar.common.policies.data.TenantInfo
 import org.apache.pulsar.common.policies.data.TopicType
 import sollecitom.examples.kotlin.pulsar.kotlin.extensions.VirtualThreads
+import sollecitom.examples.kotlin.pulsar.kotlin.extensions.runInVirtualThreads
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.topic.PulsarTopic
 
-suspend fun PulsarAdmin.createTopic(fullyQualifiedTopic: String, numberOfPartitions: Int = 1) = onVirtualThreads { topics().createPartitionedTopic(fullyQualifiedTopic, numberOfPartitions) }
+suspend fun PulsarAdmin.createTopic(fullyQualifiedTopic: String, numberOfPartitions: Int = 1) = withContext(Dispatchers.VirtualThreads) { topics().createPartitionedTopic(fullyQualifiedTopic, numberOfPartitions) }
 
-suspend fun PulsarAdmin.createTenant(tenant: String) = onVirtualThreads {
+suspend fun PulsarAdmin.createTenant(tenant: String) = withContext(Dispatchers.VirtualThreads) {
 
     val allClusters = clusters().clusters.toSet()
     tenants().createTenant(tenant, TenantInfo.builder().allowedClusters(allClusters).build())
 }
 
-suspend fun PulsarAdmin.createNamespace(tenant: String, namespace: String) = onVirtualThreads { namespaces().createNamespace("$tenant/$namespace") }
+suspend fun PulsarAdmin.createNamespace(tenant: String, namespace: String) = withContext(Dispatchers.VirtualThreads) { namespaces().createNamespace("$tenant/$namespace") }
 
-suspend fun PulsarAdmin.configureNamespace(tenant: String, namespace: String, allowTopicCreation: Boolean = false, isAllowAutoUpdateSchema: Boolean = false, schemaValidationEnforced: Boolean = true, schemaCompatibilityStrategy: SchemaCompatibilityStrategy = SchemaCompatibilityStrategy.FULL_TRANSITIVE) = onVirtualThreads {
+suspend fun PulsarAdmin.configureNamespace(tenant: String, namespace: String, allowTopicCreation: Boolean = false, isAllowAutoUpdateSchema: Boolean = false, schemaValidationEnforced: Boolean = true, schemaCompatibilityStrategy: SchemaCompatibilityStrategy = SchemaCompatibilityStrategy.FULL_TRANSITIVE) = withContext(Dispatchers.VirtualThreads) {
 
     val tenantNamespace = "$tenant/$namespace"
     namespaces().setAutoTopicCreation(tenantNamespace, AutoTopicCreationOverride.builder().allowAutoTopicCreation(allowTopicCreation).topicType(TopicType.PARTITIONED.name).build())
@@ -32,7 +33,7 @@ suspend fun PulsarAdmin.configureNamespace(tenant: String, namespace: String, al
     namespaces().setSchemaCompatibilityStrategy(tenantNamespace, schemaCompatibilityStrategy)
 }
 
-suspend fun PulsarAdmin.createTenantAndNamespace(tenantId: String, namespace: String, allowTopicCreation: Boolean = false, isAllowAutoUpdateSchema: Boolean = false, schemaValidationEnforced: Boolean = true, schemaCompatibilityStrategy: SchemaCompatibilityStrategy = SchemaCompatibilityStrategy.FULL_TRANSITIVE) = onVirtualThreads {
+suspend fun PulsarAdmin.createTenantAndNamespace(tenantId: String, namespace: String, allowTopicCreation: Boolean = false, isAllowAutoUpdateSchema: Boolean = false, schemaValidationEnforced: Boolean = true, schemaCompatibilityStrategy: SchemaCompatibilityStrategy = SchemaCompatibilityStrategy.FULL_TRANSITIVE) = withContext(Dispatchers.VirtualThreads) {
 
     createTenant(tenantId)
     createNamespace(tenantId, namespace)
@@ -60,7 +61,7 @@ suspend fun PulsarAdmin.ensureTopicExists(fullyQualifiedTopic: String, numberOfP
     createTopic(fullyQualifiedTopic, numberOfPartitions)
 }
 
-suspend fun PulsarAdmin.ensureTopicWorks(topic: PulsarTopic, numberOfPartitions: Int = 1, allowTopicCreation: Boolean = false, isAllowAutoUpdateSchema: Boolean = false, schemaValidationEnforced: Boolean = true, schemaCompatibilityStrategy: SchemaCompatibilityStrategy = SchemaCompatibilityStrategy.FULL_TRANSITIVE, schema: Schema<*>? = null): Boolean = onVirtualThreads {
+suspend fun PulsarAdmin.ensureTopicWorks(topic: PulsarTopic, numberOfPartitions: Int = 1, allowTopicCreation: Boolean = false, isAllowAutoUpdateSchema: Boolean = false, schemaValidationEnforced: Boolean = true, schemaCompatibilityStrategy: SchemaCompatibilityStrategy = SchemaCompatibilityStrategy.FULL_TRANSITIVE, schema: Schema<*>? = null): Boolean = withContext(Dispatchers.VirtualThreads) {
 
     ensureTenantAndNamespaceExist(topic.tenant, topic.namespace, allowTopicCreation, isAllowAutoUpdateSchema, schemaValidationEnforced, schemaCompatibilityStrategy)
     val existing = ensureTopicExists(topic.fullName, numberOfPartitions)
@@ -74,5 +75,3 @@ private inline fun withConflictExceptionIgnored(action: () -> Unit): Boolean = t
 } catch (error: PulsarAdminException.ConflictException) {
     false
 }
-
-private suspend inline fun <RESULT> onVirtualThreads(crossinline action: suspend () -> RESULT): RESULT = withContext(Dispatchers.VirtualThreads) { action() }
