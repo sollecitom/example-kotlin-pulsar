@@ -10,7 +10,6 @@ import org.apache.pulsar.common.policies.data.SchemaCompatibilityStrategy
 import org.apache.pulsar.common.policies.data.TenantInfo
 import org.apache.pulsar.common.policies.data.TopicType
 import sollecitom.examples.kotlin.pulsar.kotlin.extensions.VirtualThreads
-import sollecitom.examples.kotlin.pulsar.kotlin.extensions.runInVirtualThreads
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.topic.PulsarTopic
 
 suspend fun PulsarAdmin.createTopic(fullyQualifiedTopic: String, numberOfPartitions: Int = 1) = withContext(Dispatchers.VirtualThreads) { topics().createPartitionedTopic(fullyQualifiedTopic, numberOfPartitions) }
