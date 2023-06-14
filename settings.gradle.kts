@@ -5,6 +5,7 @@ val versionCatalogName: String by settings
 
 module("code")
 module("test", "utils")
+module("kotlin", "extensions")
 
 fun module(vararg pathSegments: String) {
     val projectName = pathSegments.last()
