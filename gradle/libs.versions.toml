@@ -1,0 +1,42 @@
+[versions]
+# library versions
+kotlin = "1.8.22"
+kotlinx-coroutines = "1.7.1"
+junit-jupiter = "5.9.3"
+assertk = "0.26.1"
+mockk = "1.13.5"
+testcontainers = "1.18.3"
+docker-java = "3.3.1"
+pulsar = "3.0.0"
+kotlin-retry = "1.0.9" #TODO check
+avro = "1.11.1" #TODO check
+# plugin versions
+plugin-palantir-git = "3.0.0"
+plugin-version-catalog-report = "0.47.0"
+plugin-version-catalog-update = "0.8.0"
+
+[libraries]
+kotlinx-coroutines-bom = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-bom", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-jdk8 = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-reactive = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactive", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-rx2 = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-rx2", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit-jupiter" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit-jupiter" }
+assertk = { module = "com.willowtreeapps.assertk:assertk", version.ref = "assertk" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+testcontainers-core = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
+testcontainers-pulsar = { module = "org.testcontainers:pulsar", version.ref = "testcontainers" }
+docker-java = { module = "com.github.docker-java:docker-java", version.ref = "docker-java" }
+avro = { module = "org.apache.avro:avro", version.ref = "avro" }
+kotlin-retry = { module = "com.michael-bull.kotlin-retry:kotlin-retry", version.ref = "kotlin-retry" }
+pulsar-admin-client = { module = "org.apache.pulsar:pulsar-client-admin-original", version.ref = "pulsar" }
+pulsar-client = { module = "org.apache.pulsar:pulsar-client-original", version.ref = "pulsar" }
+
+[plugins]
+com-github-ben-manes-versions = { id = "com.github.ben-manes.versions", version.ref = "plugin-version-catalog-report" }
+com-palantir-git-version = { id = "com.palantir.git-version", version.ref = "plugin-palantir-git" }
+nl-littlerobots-version-catalog-update = { id = "nl.littlerobots.version-catalog-update", version.ref = "plugin-version-catalog-update" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
