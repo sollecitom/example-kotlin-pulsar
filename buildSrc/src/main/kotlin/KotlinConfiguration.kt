@@ -1,3 +1,6 @@
+private val optIns = listOf("kotlin.Experimental", "kotlinx.coroutines.ExperimentalCoroutinesApi")
+private val optInCompilerArguments = optIns.map { "-opt-in=$it" }
+
 object KotlinConfiguration {
 
     object TargetJvm {
@@ -7,7 +10,7 @@ object KotlinConfiguration {
 
     object Compiler {
 
-        val arguments = listOf("-opt-in=kotlin.Experimental")
+        val arguments = optInCompilerArguments
         const val generateJavaParameters = true
     }
 }
