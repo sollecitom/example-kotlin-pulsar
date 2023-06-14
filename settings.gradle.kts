@@ -4,6 +4,7 @@ rootProject.name = "pulsar-kotlin-example"
 val versionCatalogName: String by settings
 
 module("code")
+module("test", "utils")
 
 fun module(vararg pathSegments: String) {
     val projectName = pathSegments.last()
