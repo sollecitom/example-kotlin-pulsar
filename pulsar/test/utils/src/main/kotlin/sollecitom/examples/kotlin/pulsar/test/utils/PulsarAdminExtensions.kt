@@ -4,6 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.admin.PulsarAdminException
+import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.common.policies.data.AutoTopicCreationOverride
 import org.apache.pulsar.common.policies.data.SchemaCompatibilityStrategy
 import org.apache.pulsar.common.policies.data.TenantInfo
@@ -59,10 +60,12 @@ suspend fun PulsarAdmin.ensureTopicExists(fullyQualifiedTopic: String, numberOfP
     createTopic(fullyQualifiedTopic, numberOfPartitions)
 }
 
-suspend fun PulsarAdmin.ensureTopicWorks(topic: PulsarTopic, numberOfPartitions: Int = 1, allowTopicCreation: Boolean = false, isAllowAutoUpdateSchema: Boolean = false, schemaValidationEnforced: Boolean = true, schemaCompatibilityStrategy: SchemaCompatibilityStrategy = SchemaCompatibilityStrategy.FULL_TRANSITIVE): Boolean {
+suspend fun PulsarAdmin.ensureTopicWorks(topic: PulsarTopic, numberOfPartitions: Int = 1, allowTopicCreation: Boolean = false, isAllowAutoUpdateSchema: Boolean = false, schemaValidationEnforced: Boolean = true, schemaCompatibilityStrategy: SchemaCompatibilityStrategy = SchemaCompatibilityStrategy.FULL_TRANSITIVE, schema: Schema<*>? = null): Boolean = onVirtualThreads {
 
     ensureTenantAndNamespaceExist(topic.tenant, topic.namespace, allowTopicCreation, isAllowAutoUpdateSchema, schemaValidationEnforced, schemaCompatibilityStrategy)
-    return ensureTopicExists(topic.fullName, numberOfPartitions)
+    val existing = ensureTopicExists(topic.fullName, numberOfPartitions)
+    schema?.schemaInfo?.let { schemas().createSchema(topic.fullName, it) }
+    existing
 }
 
 private inline fun withConflictExceptionIgnored(action: () -> Unit): Boolean = try {
