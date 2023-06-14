@@ -8,8 +8,8 @@ mockk = "1.13.5"
 testcontainers = "1.18.3"
 docker-java = "3.3.1"
 pulsar = "3.0.0"
-kotlin-retry = "1.0.9" #TODO check
 avro = "1.11.1" #TODO check
+blockhound = "1.0.8.RELEASE"
 # plugin versions
 plugin-palantir-git = "3.0.0"
 plugin-version-catalog-report = "0.47.0"
@@ -22,6 +22,7 @@ kotlinx-coroutines-jdk8 = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-j
 kotlinx-coroutines-reactive = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactive", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-debug = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-debug", version.ref = "kotlinx-coroutines" }
+blockhound = { module = "io.projectreactor.tools:blockhound", version.ref = "blockhound" }
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit-jupiter" }
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit-jupiter" }
 strikt-bom = { module = "io.strikt:strikt-bom", version.ref = "strikt" }
@@ -33,7 +34,6 @@ testcontainers-core = { module = "org.testcontainers:testcontainers", version.re
 testcontainers-pulsar = { module = "org.testcontainers:pulsar", version.ref = "testcontainers" }
 docker-java = { module = "com.github.docker-java:docker-java", version.ref = "docker-java" }
 avro = { module = "org.apache.avro:avro", version.ref = "avro" }
-kotlin-retry = { module = "com.michael-bull.kotlin-retry:kotlin-retry", version.ref = "kotlin-retry" }
 pulsar-admin-client = { module = "org.apache.pulsar:pulsar-client-admin-original", version.ref = "pulsar" }
 pulsar-client = { module = "org.apache.pulsar:pulsar-client-original", version.ref = "pulsar" }
 

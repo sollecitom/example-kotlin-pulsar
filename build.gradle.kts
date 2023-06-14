@@ -56,6 +56,7 @@ allprojects {
             showStandardStreams = false
             exceptionFormat = TestExceptionFormat.FULL
         }
+        jvmArgs = listOf("-XX:+AllowRedefinitionToAddDeleteMethods")
     }
 
     subprojects {
