@@ -3,7 +3,7 @@
 kotlin = "1.8.22"
 kotlinx-coroutines = "1.7.1"
 junit-jupiter = "5.9.3"
-assertk = "0.26.1"
+strikt = "0.34.1"
 mockk = "1.13.5"
 testcontainers = "1.18.3"
 docker-java = "3.3.1"
@@ -25,7 +25,10 @@ kotlinx-coroutines-rx2 = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-rx
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit-jupiter" }
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit-jupiter" }
-assertk = { module = "com.willowtreeapps.assertk:assertk", version.ref = "assertk" }
+strikt-bom = { module = "io.strikt:strikt-bom", version.ref = "strikt" }
+strikt-core = { module = "io.strikt:strikt-core", version.ref = "strikt" }
+strikt-jvm = { module = "io.strikt:strikt-jvm", version.ref = "strikt" }
+strikt-mockk = { module = "io.strikt:strikt-mockk", version.ref = "strikt" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 testcontainers-core = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
 testcontainers-pulsar = { module = "org.testcontainers:pulsar", version.ref = "testcontainers" }
