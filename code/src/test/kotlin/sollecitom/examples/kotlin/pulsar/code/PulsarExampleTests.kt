@@ -11,6 +11,13 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.client.admin.*
+import sollecitom.examples.kotlin.pulsar.pulsar.domain.client.newConsumer
+import sollecitom.examples.kotlin.pulsar.pulsar.domain.client.newProducer
+import sollecitom.examples.kotlin.pulsar.pulsar.domain.consumer.acknowledgeSuspending
+import sollecitom.examples.kotlin.pulsar.pulsar.domain.consumer.messages
+import sollecitom.examples.kotlin.pulsar.pulsar.domain.consumer.topic
+import sollecitom.examples.kotlin.pulsar.pulsar.domain.producer.sendSuspending
+import sollecitom.examples.kotlin.pulsar.pulsar.domain.producer.topic
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.topic.PulsarTopic
 import sollecitom.examples.kotlin.pulsar.test.utils.*
 import strikt.api.expectThat

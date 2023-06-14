@@ -1,4 +1,4 @@
-package sollecitom.examples.kotlin.pulsar.pulsar.domain.client.admin
+package sollecitom.examples.kotlin.pulsar.pulsar.domain.consumer
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
