@@ -7,6 +7,9 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
+import sollecitom.examples.kotlin.pulsar.test.utils.admin
+import sollecitom.examples.kotlin.pulsar.test.utils.client
+import sollecitom.examples.kotlin.pulsar.test.utils.newPulsarContainer
 import strikt.api.expectThat
 import strikt.assertions.isTrue
 import kotlin.time.Duration.Companion.seconds
@@ -15,15 +18,22 @@ import kotlin.time.Duration.Companion.seconds
 private class PulsarExampleTests {
 
     private val timeout = 10.seconds
+    private val pulsar = newPulsarContainer()
+    private val pulsarClient by lazy(pulsar::client)
+    private val pulsarAdmin by lazy(pulsar::admin)
 
     @BeforeAll
     fun beforeAll() {
         DebugProbes.install()
+        pulsar.start()
     }
 
     @AfterAll
     fun afterAll() {
         DebugProbes.uninstall()
+        pulsarAdmin.close()
+        pulsarClient.close()
+        pulsar.stop()
     }
 
     @Test
