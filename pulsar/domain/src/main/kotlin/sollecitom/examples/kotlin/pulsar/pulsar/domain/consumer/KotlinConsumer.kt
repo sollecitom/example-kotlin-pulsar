@@ -6,3 +6,5 @@ interface KotlinConsumer<T> {
 
     val nativeConsumer: Consumer<T>
 }
+
+internal data class KotlinConsumerAdapter<T>(override val nativeConsumer: Consumer<T>) : KotlinConsumer<T>

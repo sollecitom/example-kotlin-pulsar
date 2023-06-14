@@ -12,12 +12,10 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.client.admin.*
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.client.newConsumer
-import sollecitom.examples.kotlin.pulsar.pulsar.domain.client.newProducer
-import sollecitom.examples.kotlin.pulsar.pulsar.domain.consumer.acknowledgeSuspending
+import sollecitom.examples.kotlin.pulsar.pulsar.domain.client.newKotlinProducer
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.consumer.messages
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.consumer.topic
-import sollecitom.examples.kotlin.pulsar.pulsar.domain.producer.sendSuspending
-import sollecitom.examples.kotlin.pulsar.pulsar.domain.producer.topic
+import sollecitom.examples.kotlin.pulsar.pulsar.domain.producer.*
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.topic.PulsarTopic
 import sollecitom.examples.kotlin.pulsar.test.utils.*
 import strikt.api.expectThat
@@ -69,13 +67,13 @@ private class PulsarExampleTests {
         val schema = Schema.STRING
         val topic = PulsarTopic.persistent("tenant", "namespace", "some-topic-2")
         pulsarAdmin.ensureTopicWorks(topic = topic, schema = schema)
-        val producer = pulsarClient.newProducer(schema) { topic(topic) }
-        val consumer = pulsarClient.newConsumer(schema) { topic(topic).subscriptionName("a-subscription-2") }
+        val producer = pulsarClient.newKotlinProducer(schema) { topic(topic) }
+        val consumer = pulsarClient.newConsumer(schema) { topic(topic).subscriptionName("a-subscription-2") } // TODO use newKotlinConsumer instead
         val message = "Hello Pulsar!"
 
-        producer.sendSuspending(message)
+        producer.send(message)
         val receivedMessage = consumer.messages.first()
-        consumer.acknowledgeSuspending(receivedMessage)
+        consumer.acknowledgeAsync(receivedMessage).await()
 
         expectThat(receivedMessage.value).isEqualTo(message)
     }
