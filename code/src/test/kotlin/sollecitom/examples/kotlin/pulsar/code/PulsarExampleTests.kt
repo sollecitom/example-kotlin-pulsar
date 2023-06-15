@@ -11,9 +11,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.client.admin.*
-import sollecitom.examples.kotlin.pulsar.pulsar.domain.client.newConsumer
+import sollecitom.examples.kotlin.pulsar.pulsar.domain.client.newKotlinConsumer
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.client.newKotlinProducer
-import sollecitom.examples.kotlin.pulsar.pulsar.domain.consumer.messages
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.consumer.topic
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.producer.*
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.topic.PulsarTopic
@@ -68,12 +67,12 @@ private class PulsarExampleTests {
         val topic = PulsarTopic.persistent("tenant", "namespace", "some-topic-2")
         pulsarAdmin.ensureTopicWorks(topic = topic, schema = schema)
         val producer = pulsarClient.newKotlinProducer(schema) { topic(topic) }
-        val consumer = pulsarClient.newConsumer(schema) { topic(topic).subscriptionName("a-subscription-2") } // TODO use newKotlinConsumer instead
+        val consumer = pulsarClient.newKotlinConsumer(schema) { topic(topic).subscriptionName("a-subscription-2") }
         val message = "Hello Pulsar!"
 
         producer.send(message)
         val receivedMessage = consumer.messages.first()
-        consumer.acknowledgeAsync(receivedMessage).await()
+        consumer.acknowledge(receivedMessage)
 
         expectThat(receivedMessage.value).isEqualTo(message)
     }
