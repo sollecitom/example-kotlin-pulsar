@@ -4,11 +4,8 @@ kotlin = "1.8.22"
 kotlinx-coroutines = "1.7.1"
 junit-jupiter = "5.9.3"
 strikt = "0.34.1"
-mockk = "1.13.5"
 testcontainers = "1.18.3"
-docker-java = "3.3.1"
 pulsar = "3.0.0"
-avro = "1.11.1" #TODO check
 # plugin versions
 plugin-palantir-git = "3.0.0"
 plugin-version-catalog-report = "0.47.0"
@@ -27,11 +24,7 @@ strikt-bom = { module = "io.strikt:strikt-bom", version.ref = "strikt" }
 strikt-core = { module = "io.strikt:strikt-core", version.ref = "strikt" }
 strikt-jvm = { module = "io.strikt:strikt-jvm", version.ref = "strikt" }
 strikt-mockk = { module = "io.strikt:strikt-mockk", version.ref = "strikt" }
-mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
-testcontainers-core = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
 testcontainers-pulsar = { module = "org.testcontainers:pulsar", version.ref = "testcontainers" }
-docker-java = { module = "com.github.docker-java:docker-java", version.ref = "docker-java" }
-avro = { module = "org.apache.avro:avro", version.ref = "avro" }
 pulsar-admin-client = { module = "org.apache.pulsar:pulsar-client-admin-original", version.ref = "pulsar" }
 pulsar-client = { module = "org.apache.pulsar:pulsar-client-original", version.ref = "pulsar" }
 
