@@ -78,6 +78,10 @@ private class PulsarExampleTests {
     @Nested
     inner class WithTestSupport : PulsarTestSupport {
 
+        override val pulsar by this@PulsarExampleTests::pulsar
+        override val pulsarClient by this@PulsarExampleTests::pulsarClient
+        override val pulsarAdmin by this@PulsarExampleTests::pulsarAdmin
+
         @Test
         fun `sending strings with the Pulsar types`() = runTest(timeout = timeout) {
 
@@ -94,9 +98,5 @@ private class PulsarExampleTests {
 
             expectThat(receivedMessage.value).isEqualTo(message)
         }
-
-        override val pulsar by this@PulsarExampleTests::pulsar
-        override val pulsarClient by this@PulsarExampleTests::pulsarClient
-        override val pulsarAdmin by this@PulsarExampleTests::pulsarAdmin
     }
 }
