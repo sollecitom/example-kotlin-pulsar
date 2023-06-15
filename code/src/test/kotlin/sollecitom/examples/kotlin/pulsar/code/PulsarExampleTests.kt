@@ -5,10 +5,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.test.runTest
 import org.apache.pulsar.client.api.*
-import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestInstance
+import org.junit.jupiter.api.*
 import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.client.admin.*
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.client.newKotlinConsumer
@@ -19,6 +16,7 @@ import sollecitom.examples.kotlin.pulsar.pulsar.domain.topic.PulsarTopic
 import sollecitom.examples.kotlin.pulsar.test.utils.*
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
+import java.util.*
 import kotlin.time.Duration.Companion.seconds
 
 @TestInstance(PER_CLASS)
@@ -61,7 +59,7 @@ private class PulsarExampleTests {
     }
 
     @Test
-    fun `sending strings with the Pulsar extensions`() = runTest(timeout = timeout) {
+    fun `sending strings with the Pulsar types`() = runTest(timeout = timeout) {
 
         val schema = Schema.STRING
         val topic = PulsarTopic.persistent("tenant", "namespace", "some-topic-2")
@@ -75,5 +73,30 @@ private class PulsarExampleTests {
         consumer.acknowledge(receivedMessage)
 
         expectThat(receivedMessage.value).isEqualTo(message)
+    }
+
+    @Nested
+    inner class WithTestSupport : PulsarTestSupport {
+
+        @Test
+        fun `sending strings with the Pulsar types`() = runTest(timeout = timeout) {
+
+            val schema = Schema.STRING
+            val topic = newPersistentTopic().also { it.ensureWorks(schema = schema) }
+            val producer = newProducer(schema) { topic(topic) }
+            val consumer = newConsumer(schema) { topic(topic) }
+
+            val message = "Hello Pulsar!"
+
+            producer.send(message)
+            val receivedMessage = consumer.messages.first()
+            consumer.acknowledge(receivedMessage)
+
+            expectThat(receivedMessage.value).isEqualTo(message)
+        }
+
+        override val pulsar by this@PulsarExampleTests::pulsar
+        override val pulsarClient by this@PulsarExampleTests::pulsarClient
+        override val pulsarAdmin by this@PulsarExampleTests::pulsarAdmin
     }
 }
