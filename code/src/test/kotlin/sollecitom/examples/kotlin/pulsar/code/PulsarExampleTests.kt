@@ -89,7 +89,6 @@ private class PulsarExampleTests {
             val topic = newPersistentTopic().also { it.ensureWorks(schema = schema) }
             val producer = newProducer(schema) { topic(topic) }
             val consumer = newConsumer(schema) { topic(topic) }
-
             val message = "Hello Pulsar!"
 
             producer.send(message)
