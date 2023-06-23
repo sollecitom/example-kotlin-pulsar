@@ -42,7 +42,7 @@ private class PulsarExampleTests {
     }
 
     @Test
-    fun `sending strings with the standard Java client`() = runTest(timeout = timeout) {
+    fun `sending strings using the standard Java client`() = runTest(timeout = timeout) {
 
         val schema = Schema.STRING
         val topic = PulsarTopic.persistent("tenant", "namespace", "some-topic-1")
@@ -59,7 +59,7 @@ private class PulsarExampleTests {
     }
 
     @Test
-    fun `sending strings with the Pulsar types`() = runTest(timeout = timeout) {
+    fun `sending strings using the Kotlin types`() = runTest(timeout = timeout) {
 
         val schema = Schema.STRING
         val topic = PulsarTopic.persistent("tenant", "namespace", "some-topic-2")
@@ -83,7 +83,7 @@ private class PulsarExampleTests {
         override val pulsarAdmin by this@PulsarExampleTests::pulsarAdmin
 
         @Test
-        fun `sending strings with the Pulsar types`() = runTest(timeout = timeout) {
+        fun `sending strings using the Kotlin types`() = runTest(timeout = timeout) {
 
             val schema = Schema.STRING
             val topic = newPersistentTopic().also { it.ensureWorks(schema = schema) }
@@ -91,9 +91,7 @@ private class PulsarExampleTests {
             val consumer = newConsumer(schema) { topic(topic) }
             val message = "Hello Pulsar!"
 
-            producer.send(message)
-            val receivedMessage = consumer.messages.first()
-            consumer.acknowledge(receivedMessage)
+            val receivedMessage = with(producer) { with(consumer) { message.sendAndReceive() } }
 
             expectThat(receivedMessage.value).isEqualTo(message)
         }

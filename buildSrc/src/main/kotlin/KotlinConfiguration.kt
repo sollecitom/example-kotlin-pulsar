@@ -1,5 +1,6 @@
 private val optIns = listOf("kotlin.Experimental", "kotlinx.coroutines.ExperimentalCoroutinesApi")
 private val optInCompilerArguments = optIns.map { "-opt-in=$it" }
+private val compilerArgs = optInCompilerArguments + listOf("-Xcontext-receivers")
 
 object KotlinConfiguration {
 
@@ -10,7 +11,7 @@ object KotlinConfiguration {
 
     object Compiler {
 
-        val arguments = optInCompilerArguments
+        val arguments = compilerArgs
         const val generateJavaParameters = true
     }
 }
