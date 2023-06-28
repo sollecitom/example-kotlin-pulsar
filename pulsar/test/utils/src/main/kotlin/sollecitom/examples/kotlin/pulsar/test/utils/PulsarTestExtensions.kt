@@ -12,7 +12,7 @@ suspend fun <T> T.sendAndReceive(): Message<T> {
     require(producerTopic == consumerTopic) { "Producer and Consumer topic must be the same to use this function" }
 
     send(this)
-    val receivedMessage = messages.first()
+    val receivedMessage = messages().first()
     acknowledge(receivedMessage)
     return receivedMessage
 }

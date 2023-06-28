@@ -4,7 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.admin.PulsarAdminException
-import org.apache.pulsar.client.api.*
+import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.common.policies.data.AutoTopicCreationOverride
 import org.apache.pulsar.common.policies.data.SchemaCompatibilityStrategy
 import org.apache.pulsar.common.policies.data.TenantInfo
@@ -12,7 +12,14 @@ import org.apache.pulsar.common.policies.data.TopicType
 import sollecitom.examples.kotlin.pulsar.kotlin.extensions.VirtualThreads
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.topic.PulsarTopic
 
-suspend fun PulsarAdmin.createTopic(fullyQualifiedTopic: String, numberOfPartitions: Int = 1) = withContext(Dispatchers.VirtualThreads) { topics().createPartitionedTopic(fullyQualifiedTopic, numberOfPartitions) }
+suspend fun PulsarAdmin.createTopic(fullyQualifiedTopic: String, numberOfPartitions: Int = 1) = withContext(Dispatchers.VirtualThreads) {
+
+    require(numberOfPartitions >= 0)
+    when {
+        numberOfPartitions > 0 -> topics().createPartitionedTopic(fullyQualifiedTopic, numberOfPartitions)
+        else -> topics().createNonPartitionedTopic(fullyQualifiedTopic)
+    }
+}
 
 suspend fun PulsarAdmin.createTenant(tenant: String) = withContext(Dispatchers.VirtualThreads) {
 

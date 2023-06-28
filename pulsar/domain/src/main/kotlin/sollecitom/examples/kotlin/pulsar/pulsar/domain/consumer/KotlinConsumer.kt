@@ -4,6 +4,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import org.apache.pulsar.client.api.*
@@ -21,7 +23,7 @@ interface KotlinConsumer<T> : Closeable {
      *
      * @return a [Flow] of received messages.
      */
-    val messages: Flow<Message<T>>
+    fun messages(): Flow<Message<T>>
 
     /**
      * Get a topic for the consumer.
@@ -300,10 +302,10 @@ interface KotlinConsumer<T> : Closeable {
 
 internal data class KotlinConsumerAdapter<T>(override val nativeConsumer: Consumer<T>) : KotlinConsumer<T> {
 
-    override val messages: Flow<Message<T>> = flow {
+    override fun messages(): Flow<Message<T>> = flow {
 
         while (currentCoroutineContext().isActive) {
-            val message = receive()
+            val message = nativeConsumer.receiveAsync().await()
             emit(message)
         }
     }

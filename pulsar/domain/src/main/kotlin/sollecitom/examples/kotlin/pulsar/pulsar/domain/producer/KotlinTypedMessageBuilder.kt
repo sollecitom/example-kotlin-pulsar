@@ -2,10 +2,7 @@ package sollecitom.examples.kotlin.pulsar.pulsar.domain.producer
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.apache.pulsar.client.api.Message
-import org.apache.pulsar.client.api.MessageId
-import org.apache.pulsar.client.api.SubscriptionType
-import org.apache.pulsar.client.api.TypedMessageBuilder
+import org.apache.pulsar.client.api.*
 import sollecitom.examples.kotlin.pulsar.kotlin.extensions.VirtualThreads
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration
@@ -32,7 +29,7 @@ interface KotlinTypedMessageBuilder<T> {
      *
      * @return the {@link MessageId} assigned by the broker to the published message.
      */
-    suspend fun send(): MessageId = withContext(Dispatchers.VirtualThreads) { nativeBuilder.send() }
+    suspend fun send(): MessageIdAdv = withContext(Dispatchers.VirtualThreads) { nativeBuilder.send() } as MessageIdAdv
 
     /**
      * Sets the key of the message for routing policy.
