@@ -127,7 +127,7 @@ private class PulsarExampleTests {
                 val key = it.toString()
                 val value = it.toString()
                 val messageId = producer.newMessage().key(key).value(value).send()
-                println("Sent partition: ${messageId.partitionIndex}, offset: ${messageId.entryId}, key: $key, value: $value")
+                println("Sent message (partitionIndex: ${messageId.partitionIndex}, entryId: ${messageId.entryId}, key: $key, value: $value)")
             }
 
             val receivedMessages = consumerGroup.receiveMessages(maxCount = 20)
@@ -180,7 +180,7 @@ class ConsumerGroup<T>(val consumers: Set<KotlinConsumer<T>>) : Closeable {
 
     data class ReceivedMessage<T>(val consumerName: String, val message: Message<T>) {
 
-        override fun toString() = "(consumerName: ${consumerName}, partitionIndex: ${message.partitionIndex}, entryId: ${message.entryId}, key: ${message.key}, value: ${message.value}"
+        override fun toString() = "(consumerName: ${consumerName}, partitionIndex: ${message.partitionIndex}, entryId: ${message.entryId}, key: ${message.key}, value: ${message.value})"
     }
 
     override fun close() {
