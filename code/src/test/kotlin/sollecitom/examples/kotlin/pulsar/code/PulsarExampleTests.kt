@@ -7,12 +7,14 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.test.runTest
 import org.apache.pulsar.client.api.*
 import org.apache.pulsar.client.api.SubscriptionType.Key_Shared
+import org.apache.pulsar.client.api.SubscriptionType.Shared
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.client.admin.*
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.client.newKotlinConsumer
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.client.newKotlinProducer
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.consumer.topic
+import sollecitom.examples.kotlin.pulsar.pulsar.domain.message.partitionIndex
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.producer.*
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.topic.PulsarTopic
 import sollecitom.examples.kotlin.pulsar.test.utils.*
@@ -139,6 +141,36 @@ private class PulsarExampleTests {
                     val otherConsumerMessages = receivedMessagesByConsumer[otherConsumer]!!
                     expectThat(consumerMessages.map { it.message.key }).doesNotContain(otherConsumerMessages.map { it.message.key })
                 }
+            }
+        }
+
+        @Test
+        fun `multiple partitions but messages are still consumed in round-robin`() = runTest(timeout = timeout) {
+
+            val schema = Schema.STRING
+            val topic = newPersistentTopic().also { it.ensureWorks(schema = schema, numberOfPartitions = 2) }
+            val producer = newProducer(schema) { topic(topic) }
+            val consumersCount = 2
+            val consumerGroup = newConsumerGroup(consumersCount = consumersCount, subscriptionType = Shared, topic = topic, schema = schema)
+            val messageCountPerKey = 2
+            val keysCount = 100
+            val expectedMessageCount = messageCountPerKey * keysCount
+
+            (1..messageCountPerKey).forEach { messagePerKeyIndex ->
+                (1..keysCount).forEach { keyIndex ->
+                    val key = keyIndex.toString()
+                    val value = (messagePerKeyIndex * keyIndex).toString()
+                    val messageId = producer.newMessage().key(key).value(value).send()
+                    println("Sent message (partitionIndex: ${messageId.partitionIndex}, entryId: ${messageId.entryId}, key: $key, value: $value)")
+                }
+            }
+            val receivedMessages = consumerGroup.receiveMessages(maxCount = expectedMessageCount)
+            val receivedMessagesByConsumer = receivedMessages.groupBy { it.consumerName }
+
+            expectThat(receivedMessages).hasSize(expectedMessageCount)
+            expectThat(receivedMessagesByConsumer).hasSize(consumersCount)
+            receivedMessagesByConsumer.forEach { (_, consumerMessages) ->
+                expectThat(consumerMessages.groupBy { it.message.partitionIndex }).not { hasSize(consumerMessages.size) } // technically not a guarantee
             }
         }
     }
