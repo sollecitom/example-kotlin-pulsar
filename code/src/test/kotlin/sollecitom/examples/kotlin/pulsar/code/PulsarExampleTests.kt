@@ -171,8 +171,8 @@ class ConsumerGroup<T>(val consumers: Set<KotlinConsumer<T>>) : Closeable {
                 consumer.messages().onEach(consumer::acknowledge).onEach { consumer.addReceived(it, received) }.onEach {
                     println("Consumer ${consumer.name} received message ${it.info}, size is ${received.size}, ${received.size >= 20}")
                     if (received.size >= maxCount) {
+//                        job.complete()
                         job.cancelAndJoin()
-//                            job.complete()
                     }
                 }.collect()
             }
@@ -190,7 +190,7 @@ class ConsumerGroup<T>(val consumers: Set<KotlinConsumer<T>>) : Closeable {
         constructor(id: MessageIdAdv, message: Message<T>) : this(id.partitionIndex, id.entryId, message.key, message.value)
     }
 
-    private val <T> Message<T>.info: MessageInfo<T> get() = (messageId as MessageIdAdv).let { id -> MessageInfo(id, this) }
+    private val <T> Message<T>.info: MessageInfo<T> get() = MessageInfo((messageId as MessageIdAdv), this)
 
     override fun close() {
         consumers.forEach(KotlinConsumer<T>::close)

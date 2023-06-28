@@ -4,12 +4,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import org.apache.pulsar.client.api.*
 import sollecitom.examples.kotlin.pulsar.kotlin.extensions.VirtualThreads
+import sollecitom.examples.kotlin.pulsar.kotlin.extensions.await
 import sollecitom.examples.kotlin.pulsar.kotlin.extensions.runInVirtualThreads
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.topic.PulsarTopic
 import java.io.Closeable
@@ -55,7 +57,7 @@ interface KotlinConsumer<T> : Closeable {
      *
      * @throws PulsarClientException if the operation fails
      */
-    suspend fun unsubscribe() = withContext(Dispatchers.VirtualThreads) { nativeConsumer.unsubscribe() }
+    suspend fun unsubscribe() = nativeConsumer.unsubscribe()
 
     /**
      * Receives a single message.
@@ -72,7 +74,7 @@ interface KotlinConsumer<T> : Closeable {
      * @throws PulsarClientException.InvalidConfigurationException
      * if a message listener was defined in the configuration
      */
-    suspend fun receive(): Message<T> = withContext(Dispatchers.VirtualThreads) { nativeConsumer.receive() }
+    suspend fun receive(): Message<T> = nativeConsumer.receiveAsync().await()
 
     /**
      * Batch receiving messages.
@@ -83,7 +85,7 @@ interface KotlinConsumer<T> : Closeable {
      * @return messages
      * @since 2.4.1
      */
-    suspend fun batchReceive(): Messages<T> = withContext(Dispatchers.VirtualThreads) { nativeConsumer.batchReceive() }
+    suspend fun batchReceive(): Messages<T> = nativeConsumer.batchReceiveAsync().await()
 
     /**
      * Acknowledge the consumption of a single message.
@@ -95,9 +97,9 @@ interface KotlinConsumer<T> : Closeable {
      * @throws PulsarClientException.NotAllowedException
      *             if `messageId` is not a {@link TopicMessageId} when multiple topics are subscribed
      */
-    suspend fun acknowledge(messageId: MessageId) = withContext(Dispatchers.VirtualThreads) { nativeConsumer.acknowledge(messageId) }
+    suspend fun acknowledge(messageId: MessageId) = nativeConsumer.acknowledgeAsync(messageId).await()
 
-    suspend fun acknowledge(message: Message<*>) = withContext(Dispatchers.VirtualThreads) { nativeConsumer.acknowledge(message) }
+    suspend fun acknowledge(message: Message<*>) = nativeConsumer.acknowledgeAsync(message).await()
 
     /**
      * Acknowledge the consumption of a list of message.
@@ -105,9 +107,9 @@ interface KotlinConsumer<T> : Closeable {
      * @throws PulsarClientException.NotAllowedException
      *     if any message id in the list is not a {@link TopicMessageId} when multiple topics are subscribed
      */
-    suspend fun acknowledge(messageIdList: List<MessageId>) = withContext(Dispatchers.VirtualThreads) { nativeConsumer.acknowledge(messageIdList) }
+    suspend fun acknowledge(messageIdList: List<MessageId>) = nativeConsumer.acknowledgeAsync(messageIdList).await()
 
-    suspend fun acknowledge(messages: Messages<*>) = withContext(Dispatchers.VirtualThreads) { nativeConsumer.acknowledge(messages) }
+    suspend fun acknowledge(messages: Messages<*>) = nativeConsumer.acknowledgeAsync(messages).await()
 
     /**
      * Acknowledge the failure to process a single message.
@@ -248,7 +250,7 @@ interface KotlinConsumer<T> : Closeable {
      * @param messageId
      * the message id where to reposition the subscription
      */
-    suspend fun seek(messageId: MessageId) = withContext(Dispatchers.VirtualThreads) { nativeConsumer.seek(messageId) }
+    suspend fun seek(messageId: MessageId) = nativeConsumer.seekAsync(messageId).await()
 
     /**
      * Reset the subscription associated with this consumer to a specific message publish time.
@@ -257,7 +259,7 @@ interface KotlinConsumer<T> : Closeable {
      * the message publish time where to reposition the subscription
      * The timestamp format should be Unix time in milliseconds.
      */
-    suspend fun seek(timestamp: Long) = withContext(Dispatchers.VirtualThreads) { nativeConsumer.seek(timestamp) }
+    suspend fun seek(timestamp: Long) = nativeConsumer.seekAsync(timestamp).await()
 
     /**
      * Reset the subscription associated with this consumer to a specific message ID or message publish time.
@@ -275,7 +277,7 @@ interface KotlinConsumer<T> : Closeable {
      * @param function
      * @throws PulsarClientException
      */
-    suspend fun seek(function: (String) -> Any) = withContext(Dispatchers.VirtualThreads) { nativeConsumer.seek(function) }
+    suspend fun seek(function: (String) -> Any) = nativeConsumer.seekAsync(function).await()
 
     /**
      * @return Whether the consumer is connected to the broker
@@ -305,7 +307,7 @@ internal data class KotlinConsumerAdapter<T>(override val nativeConsumer: Consum
     override fun messages(): Flow<Message<T>> = flow {
 
         while (currentCoroutineContext().isActive) {
-            val message = nativeConsumer.receiveAsync().await()
+            val message = receive()
             emit(message)
         }
     }
