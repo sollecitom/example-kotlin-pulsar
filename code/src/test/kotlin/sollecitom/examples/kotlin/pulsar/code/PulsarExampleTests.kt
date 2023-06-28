@@ -6,7 +6,6 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.test.runTest
 import org.apache.pulsar.client.api.*
-import org.apache.pulsar.client.api.SubscriptionType.Failover
 import org.apache.pulsar.client.api.SubscriptionType.Key_Shared
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
@@ -102,9 +101,17 @@ private class PulsarExampleTests {
 
             expectThat(receivedMessage.value).isEqualTo(message)
         }
+    }
+
+    @Nested
+    inner class PulsarVsKafka : PulsarTestSupport {
+
+        override val pulsar by this@PulsarExampleTests::pulsar
+        override val pulsarClient by this@PulsarExampleTests::pulsarClient
+        override val pulsarAdmin by this@PulsarExampleTests::pulsarAdmin
 
         @Test
-        fun `no partitions but messages are routed using the hash of the key`() = runTest(timeout = timeout) {
+        fun `no partitions but messages are still consumed using the hash of the key`() = runTest(timeout = timeout) {
 
             val schema = Schema.STRING
             val topic = newPersistentTopic().also { it.ensureWorks(schema = schema, numberOfPartitions = 0) }
@@ -153,15 +160,15 @@ class ConsumerGroup<T>(val consumers: Set<KotlinConsumer<T>>) : Closeable {
         val received = mutableListOf<ReceivedMessage<T>>()
         consumers.forEach { consumer ->
 //            withContext(Dispatchers.IO) {
-                scope.launch {
-                    consumer.messages().onEach(consumer::acknowledge).onEach { consumer.addReceived(it, received) }.onEach {
-                        println("Consumer ${consumer.name} received message ${it.info}, size is ${received.size}, ${received.size >= 20}")
-                        if (received.size >= maxCount) {
-                            job.cancelAndJoin()
+            scope.launch {
+                consumer.messages().onEach(consumer::acknowledge).onEach { consumer.addReceived(it, received) }.onEach {
+                    println("Consumer ${consumer.name} received message ${it.info}, size is ${received.size}, ${received.size >= 20}")
+                    if (received.size >= maxCount) {
+                        job.cancelAndJoin()
 //                            job.complete()
-                        }
-                    }.collect()
-                }
+                    }
+                }.collect()
+            }
 //            }
         }
         job.join()
