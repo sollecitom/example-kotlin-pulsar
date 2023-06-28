@@ -15,7 +15,6 @@ import sollecitom.examples.kotlin.pulsar.pulsar.domain.client.newKotlinProducer
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.consumer.KotlinConsumer
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.consumer.topic
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.message.entryId
-import sollecitom.examples.kotlin.pulsar.pulsar.domain.message.id
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.message.partitionIndex
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.producer.*
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.topic.PulsarTopic
@@ -118,29 +117,33 @@ private class PulsarExampleTests {
 
             val schema = Schema.STRING
             val topic = newPersistentTopic().also { it.ensureWorks(schema = schema, numberOfPartitions = 0) }
-
             val producer = newProducer(schema) { topic(topic) }
+            val consumersCount = 2
+            val consumerGroup = newConsumerGroup(consumersCount = consumersCount, subscriptionType = Key_Shared, topic = topic, schema = schema)
+            val messageCountPerKey = 2
+            val keysCount = 10
+            val expectedMessageCount = messageCountPerKey * keysCount
 
-            val consumerGroup = newConsumerGroup(consumersCount = 2, subscriptionType = Key_Shared, topic = topic, schema = schema)
-
-            (1..20).forEach {
-                val key = it.toString()
-                val value = it.toString()
-                val messageId = producer.newMessage().key(key).value(value).send()
-                println("Sent message (partitionIndex: ${messageId.partitionIndex}, entryId: ${messageId.entryId}, key: $key, value: $value)")
+            (1..messageCountPerKey).forEach { messagePerKeyIndex ->
+                (1..keysCount).forEach { keyIndex ->
+                    val key = keyIndex.toString()
+                    val value = (messagePerKeyIndex * keyIndex).toString()
+                    val messageId = producer.newMessage().key(key).value(value).send()
+                    println("Sent message (partitionIndex: ${messageId.partitionIndex}, entryId: ${messageId.entryId}, key: $key, value: $value)")
+                }
             }
+            val receivedMessages = consumerGroup.receiveMessages(maxCount = expectedMessageCount)
+            val receivedMessagesByConsumer = receivedMessages.groupBy { it.consumerName }
 
-            val receivedMessages = consumerGroup.receiveMessages(maxCount = 20)
-
-            val consumer1 = consumerGroup.consumers.single { it.name == "consumer-0" } // TODO improve this crap
-            val consumer2 = consumerGroup.consumers.single { it.name == "consumer-1" }
-
-            expectThat(receivedMessages).hasSize(20)
-            expectThat(receivedMessages.filter { it.consumerName == consumer1.name }.map { it.message.key }).doesNotContain(receivedMessages.filter { it.consumerName == consumer2.name }.map { it.message.key })
-            val consumer1MessagesOnTheSamePartition = receivedMessages.filter { it.consumerName == consumer1.name }.groupBy { it.message.id.partitionIndex }.entries.single().value
-            expectThat(consumer1MessagesOnTheSamePartition).hasSize(receivedMessages.filter { it.consumerName == consumer1.name }.size)
-            val consumer2MessagesOnTheSamePartition = receivedMessages.filter { it.consumerName == consumer2.name }.groupBy { it.message.id.partitionIndex }.entries.single().value
-            expectThat(consumer2MessagesOnTheSamePartition).hasSize(receivedMessages.filter { it.consumerName == consumer2.name }.size)
+            expectThat(receivedMessages).hasSize(expectedMessageCount)
+            expectThat(receivedMessagesByConsumer).hasSize(consumersCount)
+            receivedMessagesByConsumer.forEach { (consumerName, consumerMessages) ->
+                val otherConsumers = receivedMessagesByConsumer.keys - consumerName
+                otherConsumers.forEach { otherConsumer ->
+                    val otherConsumerMessages = receivedMessagesByConsumer[otherConsumer]!!
+                    expectThat(consumerMessages.map { it.message.key }).doesNotContain(otherConsumerMessages.map { it.message.key })
+                }
+            }
         }
     }
 }
