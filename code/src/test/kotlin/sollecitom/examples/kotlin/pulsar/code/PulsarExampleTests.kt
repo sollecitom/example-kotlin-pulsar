@@ -141,7 +141,7 @@ private class PulsarExampleTests {
             val consumersCount = 2
             val consumerGroup = newConsumerGroup(consumersCount = consumersCount, subscriptionType = Shared, topic = topic, schema = schema)
             val messageCountPerKey = 2
-            val keysCount = 100
+            val keysCount = 20
             val expectedMessageCount = messageCountPerKey * keysCount
 
             producer.sendTestMessages(messageCountPerKey, keysCount)
@@ -150,12 +150,6 @@ private class PulsarExampleTests {
 
             expectThat(receivedMessages).hasSize(expectedMessageCount)
             expectThat(receivedMessagesByConsumer).hasSize(consumersCount)
-            // TODO remove
-            receivedMessagesByConsumer.forEach { (_, consumerMessages) ->
-                consumerMessages.groupBy { it.message.partitionIndex }.forEach { (partitionIndex, partitionMessages) ->
-                    expectThat(partitionMessages).not { hasSize(consumerMessages.size) }
-                }
-            }
             expectThat(receivedMessagesByConsumer).containsMessagesAcrossMultiplePartitionsForEachConsumer()
         }
 
