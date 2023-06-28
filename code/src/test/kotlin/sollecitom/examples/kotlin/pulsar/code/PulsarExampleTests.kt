@@ -18,6 +18,7 @@ import sollecitom.examples.kotlin.pulsar.pulsar.domain.message.partitionIndex
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.producer.*
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.topic.PulsarTopic
 import sollecitom.examples.kotlin.pulsar.test.utils.*
+import strikt.api.DescribeableBuilder
 import strikt.api.expectThat
 import strikt.assertions.doesNotContain
 import strikt.assertions.hasSize
@@ -128,13 +129,7 @@ private class PulsarExampleTests {
 
             expectThat(receivedMessages).hasSize(expectedMessageCount)
             expectThat(receivedMessagesByConsumer).hasSize(consumersCount)
-            receivedMessagesByConsumer.forEach { (consumerName, consumerMessages) ->
-                val otherConsumers = receivedMessagesByConsumer.keys - consumerName
-                otherConsumers.forEach { otherConsumer ->
-                    val otherConsumerMessages = receivedMessagesByConsumer[otherConsumer]!!
-                    expectThat(consumerMessages.map { it.message.key }).doesNotContain(otherConsumerMessages.map { it.message.key })
-                }
-            }
+            expectThat(receivedMessagesByConsumer).doesNotContainTheSameKeyAcrossMultipleConsumers()
         }
 
         @Test
@@ -172,4 +167,22 @@ private suspend fun KotlinProducer<String>.sendTestMessages(messageCountPerKey: 
             println("Sent message (partitionIndex: ${messageId.partitionIndex}, entryId: ${messageId.entryId}, key: $key, value: $value)")
         }
     }
+}
+
+private fun <T> DescribeableBuilder<Map<String, List<ReceivedMessage<T>>>>.doesNotContainTheSameKeyAcrossMultipleConsumers() = compose("does not contain the same key across multiple consumers") { subject ->
+
+    subject.forEach { (consumerName, consumerMessages) ->
+        get("The received message keys for consumer $consumerName: %s") { consumerMessages.map { it.message.key } }.doesNotContainAKeyReceivedByOtherConsumers(subject - consumerName)
+    }
+} then {
+    if (allPassed) pass() else fail()
+}
+
+private fun <T> DescribeableBuilder<List<String>>.doesNotContainAKeyReceivedByOtherConsumers(otherConsumers: Map<String, List<ReceivedMessage<T>>>) = compose("does not contain the same key received by other consumers") { subject ->
+
+    otherConsumers.forEach { otherConsumer ->
+        get("Other consumer ${otherConsumer.key}: %s") { otherConsumer.value.map { it.message.key } }.doesNotContain(subject)
+    }
+} then {
+    if (allPassed) pass() else fail()
 }
