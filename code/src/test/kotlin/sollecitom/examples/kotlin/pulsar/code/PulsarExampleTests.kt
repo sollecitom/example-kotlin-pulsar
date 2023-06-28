@@ -116,10 +116,9 @@ private class PulsarExampleTests {
             val schema = Schema.STRING
             val topic = newPersistentTopic().also { it.ensureWorks(schema = schema, numberOfPartitions = 0) }
 
-            val subscriptionName = "no-partitions-consumers"
-            val consumer1 = newConsumer(schema) { topic(topic).consumerName("1").subscriptionName(subscriptionName).subscriptionType(Key_Shared) }
-            val consumer2 = newConsumer(schema) { topic(topic).consumerName("2").subscriptionName(subscriptionName).subscriptionType(Key_Shared) }
             val producer = newProducer(schema) { topic(topic) }
+
+            val consumerGroup = newConsumerGroup(topic, schema, 2, Key_Shared)
 
             (1..20).forEach {
                 val key = it.toString()
@@ -128,8 +127,10 @@ private class PulsarExampleTests {
                 println("Sent partition: ${messageId.partitionIndex}, offset: ${messageId.entryId}, key: $key, value: $value")
             }
 
-            val consumerGroup = ConsumerGroup(consumer1, consumer2)
-            val receivedMessages = consumerGroup.receiveMessages(20)
+            val receivedMessages = consumerGroup.receiveMessages(maxCount = 20)
+
+            val consumer1 = consumerGroup.consumers.single { it.name == "consumer-1" } // TODO improve this crap
+            val consumer2 = consumerGroup.consumers.single { it.name == "consumer-2" }
 
             expectThat(receivedMessages).hasSize(20)
             expectThat(receivedMessages.filter { it.consumerName == consumer1.name }.map { it.message.key }).doesNotContain(receivedMessages.filter { it.consumerName == consumer2.name }.map { it.message.key })
@@ -139,6 +140,12 @@ private class PulsarExampleTests {
             expectThat(consumer2MessagesOnTheSamePartition).hasSize(receivedMessages.filter { it.consumerName == consumer2.name }.size)
         }
     }
+}
+
+private suspend fun <T> PulsarTestSupport.newConsumerGroup(topic: PulsarTopic, schema: Schema<T>, consumersCount: Int, subscriptionType: SubscriptionType, subscriptionName: String = UUID.randomUUID().toString()): ConsumerGroup<T> {
+
+    val consumers = (1..consumersCount).map { newConsumer(schema, subscriptionName) { topic(topic).subscriptionType(subscriptionType).consumerName("consumer-$it") } }.toSet()
+    return ConsumerGroup(consumers)
 }
 
 class ConsumerGroup<T>(val consumers: Set<KotlinConsumer<T>>) : Closeable {
