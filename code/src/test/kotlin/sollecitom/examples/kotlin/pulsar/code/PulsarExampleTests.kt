@@ -122,14 +122,7 @@ private class PulsarExampleTests {
             val keysCount = 10
             val expectedMessageCount = messageCountPerKey * keysCount
 
-            (1..messageCountPerKey).forEach { messagePerKeyIndex ->
-                (1..keysCount).forEach { keyIndex ->
-                    val key = keyIndex.toString()
-                    val value = (messagePerKeyIndex * keyIndex).toString()
-                    val messageId = producer.newMessage().key(key).value(value).send()
-                    println("Sent message (partitionIndex: ${messageId.partitionIndex}, entryId: ${messageId.entryId}, key: $key, value: $value)")
-                }
-            }
+            producer.sendTestMessages(messageCountPerKey, keysCount)
             val receivedMessages = consumerGroup.receiveMessages(maxCount = expectedMessageCount)
             val receivedMessagesByConsumer = receivedMessages.groupBy { it.consumerName }
 
@@ -156,14 +149,7 @@ private class PulsarExampleTests {
             val keysCount = 100
             val expectedMessageCount = messageCountPerKey * keysCount
 
-            (1..messageCountPerKey).forEach { messagePerKeyIndex ->
-                (1..keysCount).forEach { keyIndex ->
-                    val key = keyIndex.toString()
-                    val value = (messagePerKeyIndex * keyIndex).toString()
-                    val messageId = producer.newMessage().key(key).value(value).send()
-                    println("Sent message (partitionIndex: ${messageId.partitionIndex}, entryId: ${messageId.entryId}, key: $key, value: $value)")
-                }
-            }
+            producer.sendTestMessages(messageCountPerKey, keysCount)
             val receivedMessages = consumerGroup.receiveMessages(maxCount = expectedMessageCount)
             val receivedMessagesByConsumer = receivedMessages.groupBy { it.consumerName }
 
@@ -172,6 +158,18 @@ private class PulsarExampleTests {
             receivedMessagesByConsumer.forEach { (_, consumerMessages) ->
                 expectThat(consumerMessages.groupBy { it.message.partitionIndex }).not { hasSize(consumerMessages.size) } // technically not a guarantee
             }
+        }
+    }
+}
+
+private suspend fun KotlinProducer<String>.sendTestMessages(messageCountPerKey: Int, keysCount: Int) {
+
+    (1..messageCountPerKey).forEach { messagePerKeyIndex ->
+        (1..keysCount).forEach { keyIndex ->
+            val key = keyIndex.toString()
+            val value = (messagePerKeyIndex * keyIndex).toString()
+            val messageId = newMessage().key(key).value(value).send()
+            println("Sent message (partitionIndex: ${messageId.partitionIndex}, entryId: ${messageId.entryId}, key: $key, value: $value)")
         }
     }
 }
