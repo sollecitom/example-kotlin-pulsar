@@ -14,6 +14,9 @@ import sollecitom.examples.kotlin.pulsar.pulsar.domain.client.newKotlinConsumer
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.client.newKotlinProducer
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.consumer.KotlinConsumer
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.consumer.topic
+import sollecitom.examples.kotlin.pulsar.pulsar.domain.message.entryId
+import sollecitom.examples.kotlin.pulsar.pulsar.domain.message.id
+import sollecitom.examples.kotlin.pulsar.pulsar.domain.message.partitionIndex
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.producer.*
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.topic.PulsarTopic
 import sollecitom.examples.kotlin.pulsar.test.utils.*
@@ -134,9 +137,9 @@ private class PulsarExampleTests {
 
             expectThat(receivedMessages).hasSize(20)
             expectThat(receivedMessages.filter { it.consumerName == consumer1.name }.map { it.message.key }).doesNotContain(receivedMessages.filter { it.consumerName == consumer2.name }.map { it.message.key })
-            val consumer1MessagesOnTheSamePartition = receivedMessages.filter { it.consumerName == consumer1.name }.groupBy { (it.message.messageId as MessageIdAdv).partitionIndex }.entries.single().value
+            val consumer1MessagesOnTheSamePartition = receivedMessages.filter { it.consumerName == consumer1.name }.groupBy { it.message.id.partitionIndex }.entries.single().value
             expectThat(consumer1MessagesOnTheSamePartition).hasSize(receivedMessages.filter { it.consumerName == consumer1.name }.size)
-            val consumer2MessagesOnTheSamePartition = receivedMessages.filter { it.consumerName == consumer2.name }.groupBy { (it.message.messageId as MessageIdAdv).partitionIndex }.entries.single().value
+            val consumer2MessagesOnTheSamePartition = receivedMessages.filter { it.consumerName == consumer2.name }.groupBy { it.message.id.partitionIndex }.entries.single().value
             expectThat(consumer2MessagesOnTheSamePartition).hasSize(receivedMessages.filter { it.consumerName == consumer2.name }.size)
         }
     }
@@ -162,8 +165,8 @@ class ConsumerGroup<T>(val consumers: Set<KotlinConsumer<T>>) : Closeable {
         val processing = Job()
         consumers.forEach { consumer ->
             launch {
-                consumer.messages().onEach(consumer::acknowledge).onEach { consumer.addReceived(it, received) }.onEach {
-                    println("Consumer ${consumer.name} received message ${it.info}, size is ${received.size}, ${received.size >= maxCount}")
+                consumer.messages().onEach(consumer::acknowledge).map { ReceivedMessage(consumer.name, it) }.onEach { addReceived(it, received) }.onEach {
+                    println("Received message $it")
                     if (received.size >= maxCount) {
                         processing.complete()
                     }
@@ -175,20 +178,16 @@ class ConsumerGroup<T>(val consumers: Set<KotlinConsumer<T>>) : Closeable {
         received
     }
 
-    data class ReceivedMessage<T>(val consumerName: String, val message: Message<T>)
+    data class ReceivedMessage<T>(val consumerName: String, val message: Message<T>) {
 
-    private data class MessageInfo<T>(val partition: Int, val offset: Long, val key: String, val value: T) {
-
-        constructor(id: MessageIdAdv, message: Message<T>) : this(id.partitionIndex, id.entryId, message.key, message.value)
+        override fun toString() = "(consumerName: ${consumerName}, partitionIndex: ${message.partitionIndex}, entryId: ${message.entryId}, key: ${message.key}, value: ${message.value}"
     }
-
-    private val <T> Message<T>.info: MessageInfo<T> get() = MessageInfo((messageId as MessageIdAdv), this)
 
     override fun close() {
         consumers.forEach(KotlinConsumer<T>::close)
     }
 
-    private fun <T> KotlinConsumer<T>.addReceived(message: Message<T>, received: MutableList<ReceivedMessage<T>>) = synchronized(received) {
-        received.add(ReceivedMessage(name, message))
+    private fun addReceived(message: ReceivedMessage<T>, received: MutableList<ReceivedMessage<T>>) = synchronized(received) {
+        received.add(message)
     }
 }
