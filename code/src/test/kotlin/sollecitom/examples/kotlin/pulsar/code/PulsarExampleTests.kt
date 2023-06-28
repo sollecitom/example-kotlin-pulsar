@@ -172,7 +172,7 @@ class ConsumerGroup<T>(val consumersByIndex: Map<Int, KotlinConsumer<T>>) : Clos
         val processing = Job()
         consumers.forEach { consumer ->
             launch {
-                consumer.messages().onEach(consumer::acknowledge).map { ReceivedMessage(consumer.name, it) }.onEach { addReceived(it, received) }.onEach {
+                consumer.messages().onEach(consumer::acknowledge).map { ReceivedMessage(consumer.name, it) }.onEach { synchronized(received) { received.add(it) } }.onEach {
                     println("Received message $it")
                     if (received.size >= maxCount) {
                         processing.complete()
@@ -186,10 +186,6 @@ class ConsumerGroup<T>(val consumersByIndex: Map<Int, KotlinConsumer<T>>) : Clos
     }
 
     override fun close() = consumers.forEach(KotlinConsumer<T>::close)
-
-    private fun addReceived(message: ReceivedMessage<T>, received: MutableList<ReceivedMessage<T>>) = synchronized(received) {
-        received.add(message)
-    }
 
     data class ReceivedMessage<T>(val consumerName: String, val message: Message<T>) {
 
