@@ -1,10 +1,8 @@
 package sollecitom.examples.kotlin.pulsar.pulsar.domain.producer
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.future.await
 import org.apache.pulsar.client.api.*
 import org.apache.pulsar.client.api.transaction.Transaction
-import sollecitom.examples.kotlin.pulsar.kotlin.extensions.VirtualThreads
 import sollecitom.examples.kotlin.pulsar.kotlin.extensions.runInVirtualThreads
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.topic.PulsarTopic
 import java.io.Closeable
@@ -124,7 +122,7 @@ interface KotlinProducer<T> : Closeable {
      * @throws PulsarClientException.AlreadyClosedException
      *             if the producer was already closed
      */
-    suspend fun send(message: T): MessageId = withContext(Dispatchers.VirtualThreads) { nativeProducer.send(message) }
+    suspend fun send(message: T): MessageId = nativeProducer.sendAsync(message).await()
 }
 
 internal data class KotlinProducerAdapter<T>(override val nativeProducer: Producer<T>) : KotlinProducer<T>
