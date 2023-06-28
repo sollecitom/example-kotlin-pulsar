@@ -40,6 +40,4 @@ interface PulsarTestSupport {
     suspend fun <T> newProducer(schema: Schema<T>, name: String = randomString(), customize: ProducerBuilder<T>.() -> Unit = {}): KotlinProducer<T> = pulsarClient.newKotlinProducer(schema) { producerName(name).also(customize) }
 
     suspend fun <T> newConsumer(schema: Schema<T>, subscriptionName: String = randomString(), customize: ConsumerBuilder<T>.() -> Unit = {}): KotlinConsumer<T> = pulsarClient.newKotlinConsumer(schema) { subscriptionName(subscriptionName).also(customize) }
-
-    private fun randomString(): String = UUID.randomUUID().toString()
 }

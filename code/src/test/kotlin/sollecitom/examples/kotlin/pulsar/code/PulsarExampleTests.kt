@@ -12,10 +12,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.client.admin.*
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.client.newKotlinConsumer
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.client.newKotlinProducer
-import sollecitom.examples.kotlin.pulsar.pulsar.domain.consumer.KotlinConsumer
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.consumer.topic
-import sollecitom.examples.kotlin.pulsar.pulsar.domain.message.entryId
-import sollecitom.examples.kotlin.pulsar.pulsar.domain.message.partitionIndex
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.producer.*
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.topic.PulsarTopic
 import sollecitom.examples.kotlin.pulsar.test.utils.*
@@ -23,7 +20,6 @@ import strikt.api.expectThat
 import strikt.assertions.doesNotContain
 import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
-import java.io.Closeable
 import java.util.*
 import kotlin.time.Duration.Companion.seconds
 
@@ -145,50 +141,5 @@ private class PulsarExampleTests {
                 }
             }
         }
-    }
-}
-
-// TODO move
-suspend fun <T> PulsarTestSupport.newConsumerGroup(topic: PulsarTopic, schema: Schema<T>, consumersCount: Int, subscriptionType: SubscriptionType, subscriptionName: String = UUID.randomUUID().toString()): ConsumerGroup<T> {
-
-    val consumers = (0 until consumersCount).map { newConsumer(schema, subscriptionName) { topic(topic).subscriptionType(subscriptionType).consumerName("consumer-$it") } }
-    return ConsumerGroup(consumers)
-}
-
-class ConsumerGroup<T>(val consumersByIndex: Map<Int, KotlinConsumer<T>>) : Closeable {
-
-    constructor(vararg consumers: KotlinConsumer<T>) : this(consumers.toList())
-    constructor(consumers: Collection<KotlinConsumer<T>>) : this(consumers.mapIndexed { index, consumer -> index to consumer }.toMap())
-
-    init {
-        require(consumersByIndex.isNotEmpty())
-    }
-
-    val consumers: Collection<KotlinConsumer<T>> get() = consumersByIndex.values
-
-    suspend fun receiveMessages(maxCount: Int): List<ReceivedMessage<T>> = coroutineScope {
-
-        val received = mutableListOf<ReceivedMessage<T>>()
-        val processing = Job()
-        consumers.forEach { consumer ->
-            launch {
-                consumer.messages().onEach(consumer::acknowledge).map { ReceivedMessage(consumer.name, it) }.onEach { synchronized(received) { received.add(it) } }.onEach {
-                    println("Received message $it")
-                    if (received.size >= maxCount) {
-                        processing.complete()
-                    }
-                }.collect()
-            }
-        }
-        processing.join()
-        coroutineContext.cancelChildren()
-        received
-    }
-
-    override fun close() = consumers.forEach(KotlinConsumer<T>::close)
-
-    data class ReceivedMessage<T>(val consumerName: String, val message: Message<T>) {
-
-        override fun toString() = "(consumerName: ${consumerName}, partitionIndex: ${message.partitionIndex}, entryId: ${message.entryId}, key: ${message.key}, value: ${message.value})"
     }
 }
