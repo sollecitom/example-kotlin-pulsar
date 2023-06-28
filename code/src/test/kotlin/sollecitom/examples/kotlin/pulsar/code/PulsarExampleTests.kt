@@ -158,12 +158,12 @@ class ConsumerGroup<T>(val consumers: Set<KotlinConsumer<T>>) : Closeable {
 
     suspend fun receiveMessages(maxCount: Int): List<ReceivedMessage<T>> = coroutineScope {
 
-        val processing = Job()
         val received = mutableListOf<ReceivedMessage<T>>()
+        val processing = Job()
         consumers.forEach { consumer ->
             launch {
                 consumer.messages().onEach(consumer::acknowledge).onEach { consumer.addReceived(it, received) }.onEach {
-                    println("Consumer ${consumer.name} received message ${it.info}, size is ${received.size}, ${received.size >= 20}")
+                    println("Consumer ${consumer.name} received message ${it.info}, size is ${received.size}, ${received.size >= maxCount}")
                     if (received.size >= maxCount) {
                         processing.complete()
                     }
