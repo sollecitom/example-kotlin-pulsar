@@ -196,10 +196,7 @@ class ConsumerGroup<T>(val consumers: Set<KotlinConsumer<T>>) : Closeable {
         consumers.forEach(KotlinConsumer<T>::close)
     }
 
-    private fun <T> KotlinConsumer<T>.addReceived(message: Message<T>, received: MutableList<ReceivedMessage<T>>) {
-
-        synchronized(received) {
-            received.add(ReceivedMessage(name, message))
-        }
+    private fun <T> KotlinConsumer<T>.addReceived(message: Message<T>, received: MutableList<ReceivedMessage<T>>) = synchronized(received) {
+        received.add(ReceivedMessage(name, message))
     }
 }
