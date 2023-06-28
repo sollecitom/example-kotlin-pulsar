@@ -6,8 +6,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.test.runTest
 import org.apache.pulsar.client.api.*
-import org.apache.pulsar.client.api.SubscriptionType.Key_Shared
-import org.apache.pulsar.client.api.SubscriptionType.Shared
+import org.apache.pulsar.client.api.SubscriptionType.*
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.client.admin.*
@@ -18,11 +17,12 @@ import sollecitom.examples.kotlin.pulsar.pulsar.domain.message.partitionIndex
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.producer.*
 import sollecitom.examples.kotlin.pulsar.pulsar.domain.topic.PulsarTopic
 import sollecitom.examples.kotlin.pulsar.test.utils.*
-import strikt.api.DescribeableBuilder
+import strikt.api.Assertion
 import strikt.api.expectThat
 import strikt.assertions.doesNotContain
 import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
+import strikt.assertions.isNotEqualTo
 import java.util.*
 import kotlin.time.Duration.Companion.seconds
 
@@ -150,9 +150,35 @@ private class PulsarExampleTests {
 
             expectThat(receivedMessages).hasSize(expectedMessageCount)
             expectThat(receivedMessagesByConsumer).hasSize(consumersCount)
+            // TODO remove
             receivedMessagesByConsumer.forEach { (_, consumerMessages) ->
-                expectThat(consumerMessages.groupBy { it.message.partitionIndex }).not { hasSize(consumerMessages.size) } // technically not a guarantee
+                consumerMessages.groupBy { it.message.partitionIndex }.forEach { (partitionIndex, partitionMessages) ->
+                    expectThat(partitionMessages).not { hasSize(consumerMessages.size) }
+                }
             }
+            expectThat(receivedMessagesByConsumer).containsMessagesAcrossMultiplePartitionsForEachConsumer()
+        }
+
+        @Test
+        fun `partitions and regular partitioned message consumption`() = runTest(timeout = timeout) {
+
+            val schema = Schema.STRING
+            val topic = newPersistentTopic().also { it.ensureWorks(schema = schema, numberOfPartitions = 4) }
+            val producer = newProducer(schema) { topic(topic) }
+            val consumersCount = 2
+            val consumerGroup = newConsumerGroup(consumersCount = consumersCount, subscriptionType = Failover, topic = topic, schema = schema)
+            val messageCountPerKey = 2
+            val keysCount = 10
+            val expectedMessageCount = messageCountPerKey * keysCount
+
+            producer.sendTestMessages(messageCountPerKey, keysCount)
+            val receivedMessages = consumerGroup.receiveMessages(maxCount = expectedMessageCount)
+            val receivedMessagesByConsumer = receivedMessages.groupBy { it.consumerName }
+
+            expectThat(receivedMessages).hasSize(expectedMessageCount)
+            expectThat(receivedMessagesByConsumer).hasSize(consumersCount)
+            expectThat(receivedMessagesByConsumer).doesNotContainTheSameKeyAcrossMultipleConsumers()
+            expectThat(receivedMessagesByConsumer).containsMessagesAcrossMultiplePartitionsForEachConsumer()
         }
     }
 }
@@ -169,7 +195,7 @@ private suspend fun KotlinProducer<String>.sendTestMessages(messageCountPerKey: 
     }
 }
 
-private fun <T> DescribeableBuilder<Map<String, List<ReceivedMessage<T>>>>.doesNotContainTheSameKeyAcrossMultipleConsumers() = compose("does not contain the same key across multiple consumers") { subject ->
+private fun <T> Assertion.Builder<Map<String, List<ReceivedMessage<T>>>>.doesNotContainTheSameKeyAcrossMultipleConsumers() = compose("does not contain the same key across multiple consumers") { subject ->
 
     subject.forEach { (consumerName, consumerMessages) ->
         get("The received message keys for consumer $consumerName: %s") { consumerMessages.map { it.message.key } }.doesNotContainAKeyReceivedByOtherConsumers(subject - consumerName)
@@ -178,10 +204,21 @@ private fun <T> DescribeableBuilder<Map<String, List<ReceivedMessage<T>>>>.doesN
     if (allPassed) pass() else fail()
 }
 
-private fun <T> DescribeableBuilder<List<String>>.doesNotContainAKeyReceivedByOtherConsumers(otherConsumers: Map<String, List<ReceivedMessage<T>>>) = compose("does not contain the same key received by other consumers") { subject ->
+private fun <T> Assertion.Builder<List<String>>.doesNotContainAKeyReceivedByOtherConsumers(otherConsumers: Map<String, List<ReceivedMessage<T>>>) = compose("does not contain the same key received by other consumers") { subject ->
 
     otherConsumers.forEach { otherConsumer ->
         get("Other consumer ${otherConsumer.key}: %s") { otherConsumer.value.map { it.message.key } }.doesNotContain(subject)
+    }
+} then {
+    if (allPassed) pass() else fail()
+}
+
+private fun <T> Assertion.Builder<Map<String, List<ReceivedMessage<T>>>>.containsMessagesAcrossMultiplePartitionsForEachConsumer() = compose("contains messages from multiple partitions for each consumer") { subject ->
+
+    subject.forEach { (consumerName, consumerMessages) ->
+        consumerMessages.groupBy { it.message.partitionIndex }.forEach { (partitionIndex, partitionMessages) ->
+            get("The number of received messages for consumer '$consumerName' on partition '$partitionIndex' %s") { partitionMessages.size }.isNotEqualTo(consumerMessages.size)
+        }
     }
 } then {
     if (allPassed) pass() else fail()
