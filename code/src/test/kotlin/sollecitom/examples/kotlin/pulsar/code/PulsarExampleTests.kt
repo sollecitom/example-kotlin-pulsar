@@ -121,7 +121,7 @@ private class PulsarExampleTests {
 
             val producer = newProducer(schema) { topic(topic) }
 
-            val consumerGroup = newConsumerGroup(topic, schema, 2, Key_Shared)
+            val consumerGroup = newConsumerGroup(consumersCount = 2, subscriptionType = Key_Shared, topic = topic, schema = schema)
 
             (1..20).forEach {
                 val key = it.toString()
@@ -132,8 +132,8 @@ private class PulsarExampleTests {
 
             val receivedMessages = consumerGroup.receiveMessages(maxCount = 20)
 
-            val consumer1 = consumerGroup.consumers.single { it.name == "consumer-1" } // TODO improve this crap
-            val consumer2 = consumerGroup.consumers.single { it.name == "consumer-2" }
+            val consumer1 = consumerGroup.consumers.single { it.name == "consumer-0" } // TODO improve this crap
+            val consumer2 = consumerGroup.consumers.single { it.name == "consumer-1" }
 
             expectThat(receivedMessages).hasSize(20)
             expectThat(receivedMessages.filter { it.consumerName == consumer1.name }.map { it.message.key }).doesNotContain(receivedMessages.filter { it.consumerName == consumer2.name }.map { it.message.key })
@@ -145,19 +145,23 @@ private class PulsarExampleTests {
     }
 }
 
-private suspend fun <T> PulsarTestSupport.newConsumerGroup(topic: PulsarTopic, schema: Schema<T>, consumersCount: Int, subscriptionType: SubscriptionType, subscriptionName: String = UUID.randomUUID().toString()): ConsumerGroup<T> {
+// TODO move
+suspend fun <T> PulsarTestSupport.newConsumerGroup(topic: PulsarTopic, schema: Schema<T>, consumersCount: Int, subscriptionType: SubscriptionType, subscriptionName: String = UUID.randomUUID().toString()): ConsumerGroup<T> {
 
-    val consumers = (1..consumersCount).map { newConsumer(schema, subscriptionName) { topic(topic).subscriptionType(subscriptionType).consumerName("consumer-$it") } }.toSet()
+    val consumers = (0 until consumersCount).map { newConsumer(schema, subscriptionName) { topic(topic).subscriptionType(subscriptionType).consumerName("consumer-$it") } }
     return ConsumerGroup(consumers)
 }
 
-class ConsumerGroup<T>(val consumers: Set<KotlinConsumer<T>>) : Closeable {
+class ConsumerGroup<T>(val consumersByIndex: Map<Int, KotlinConsumer<T>>) : Closeable {
 
-    constructor(vararg consumers: KotlinConsumer<T>) : this(consumers.toSet())
+    constructor(vararg consumers: KotlinConsumer<T>) : this(consumers.toList())
+    constructor(consumers: Collection<KotlinConsumer<T>>) : this(consumers.mapIndexed { index, consumer -> index to consumer }.toMap())
 
     init {
-        require(consumers.isNotEmpty())
+        require(consumersByIndex.isNotEmpty())
     }
+
+    val consumers: Collection<KotlinConsumer<T>> get() = consumersByIndex.values
 
     suspend fun receiveMessages(maxCount: Int): List<ReceivedMessage<T>> = coroutineScope {
 
@@ -178,16 +182,14 @@ class ConsumerGroup<T>(val consumers: Set<KotlinConsumer<T>>) : Closeable {
         received
     }
 
-    data class ReceivedMessage<T>(val consumerName: String, val message: Message<T>) {
-
-        override fun toString() = "(consumerName: ${consumerName}, partitionIndex: ${message.partitionIndex}, entryId: ${message.entryId}, key: ${message.key}, value: ${message.value})"
-    }
-
-    override fun close() {
-        consumers.forEach(KotlinConsumer<T>::close)
-    }
+    override fun close() = consumers.forEach(KotlinConsumer<T>::close)
 
     private fun addReceived(message: ReceivedMessage<T>, received: MutableList<ReceivedMessage<T>>) = synchronized(received) {
         received.add(message)
+    }
+
+    data class ReceivedMessage<T>(val consumerName: String, val message: Message<T>) {
+
+        override fun toString() = "(consumerName: ${consumerName}, partitionIndex: ${message.partitionIndex}, entryId: ${message.entryId}, key: ${message.key}, value: ${message.value})"
     }
 }
