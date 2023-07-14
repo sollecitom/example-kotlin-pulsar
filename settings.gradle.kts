@@ -10,6 +10,9 @@ module("messaging", "domain")
 module("pulsar", "domain")
 module("pulsar", "test", "utils")
 
+module("z_craftsmanship", "example")
+module("z_craftsmanship", "test", "utils")
+
 fun module(vararg pathSegments: String) {
     val projectName = pathSegments.last()
     val path = pathSegments.dropLast(1)

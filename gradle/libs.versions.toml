@@ -6,6 +6,7 @@ junit-jupiter = "5.9.3"
 strikt = "0.34.1"
 testcontainers = "1.18.3"
 pulsar = "3.0.0"
+assertk = "0.26.1"
 # plugin versions
 plugin-palantir-git = "3.0.0"
 plugin-version-catalog-report = "0.47.0"
@@ -27,6 +28,7 @@ strikt-mockk = { module = "io.strikt:strikt-mockk", version.ref = "strikt" }
 testcontainers-pulsar = { module = "org.testcontainers:pulsar", version.ref = "testcontainers" }
 pulsar-admin-client = { module = "org.apache.pulsar:pulsar-client-admin-original", version.ref = "pulsar" }
 pulsar-client = { module = "org.apache.pulsar:pulsar-client-original", version.ref = "pulsar" }
+assertk = { module = "com.willowtreeapps.assertk:assertk", version.ref = "assertk" }
 
 [plugins]
 com-github-ben-manes-versions = { id = "com.github.ben-manes.versions", version.ref = "plugin-version-catalog-report" }
