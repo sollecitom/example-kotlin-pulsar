@@ -18,7 +18,7 @@ import kotlin.time.Duration.Companion.days
 private class ScratchpadTest {
 
     @Test
-    fun `scratchpad test`() {
+    fun `finding expired food`() {
 
         val immortalYogurt = ImmortalFood()
         val mortalButter = SimplePerishableFood(expiryDate = today() - 2.days)
