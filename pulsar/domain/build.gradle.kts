@@ -1,5 +1,6 @@
 dependencies {
     api(projects.pulsarKotlinExampleMessagingDomain)
+    api(libs.pulsar.client)
     api(libs.pulsar.admin.client) {
         // non-fips BC dependencies
         exclude(group = "org.apache.pulsar", module = "bouncy-castle-bc")
