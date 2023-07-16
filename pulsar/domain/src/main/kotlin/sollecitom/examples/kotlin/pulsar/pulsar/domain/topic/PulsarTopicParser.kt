@@ -1,6 +1,6 @@
 package sollecitom.examples.kotlin.pulsar.pulsar.domain.topic
 
-import replaceFrom
+import sollecitom.examples.kotlin.pulsar.kotlin.extensions.replaceFrom
 
 internal object PulsarTopicParser {
 
