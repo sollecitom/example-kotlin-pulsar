@@ -1,6 +1,6 @@
 [versions]
 # library versions
-kotlin = "1.8.22"
+kotlin = "1.9.0"
 kotlinx-coroutines = "1.7.1"
 junit-jupiter = "5.9.3"
 strikt = "0.34.1"
