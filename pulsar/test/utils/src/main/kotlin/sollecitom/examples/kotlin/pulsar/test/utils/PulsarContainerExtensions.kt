@@ -25,9 +25,6 @@ fun newPulsarContainer(version: String = DEFAULT_PULSAR_DOCKER_IMAGE_VERSION, st
             .apply { setWaitStrategy(PulsarWaitStrategies.clustersEndpoint) }
 }
 
-@Deprecated(message = "Use `newPulsarContainer().withNetworkAndAliases(network)` instead")
-fun newPulsarContainerWithNetwork(network: Network, version: String = DEFAULT_PULSAR_DOCKER_IMAGE_VERSION, startupAttempts: Int = 10, startupTimeout: Duration = 2.minutes): PulsarContainer = newPulsarContainer(version, startupAttempts, startupTimeout).withNetworkAndAliases(network)
-
 fun PulsarContainer.withNetworkAndAliases(network: Network, vararg aliases: String = arrayOf(PULSAR_NETWORK_ALIAS)): PulsarContainer = withNetwork(network).withNetworkAliases(*aliases)
 
 val PulsarContainer.networkAlias: String get() = PULSAR_NETWORK_ALIAS

@@ -112,6 +112,28 @@ private class PulsarExampleTests {
         override val pulsarAdmin by this@PulsarExampleTests::pulsarAdmin
 
         @Test
+        fun `partitions and regular partitioned message consumption`() = runTest(timeout = timeout) {
+
+            val schema = Schema.STRING
+            val topic = newPersistentTopic().also { it.ensureWorks(schema = schema, numberOfPartitions = 4) }
+            val producer = newProducer(schema) { topic(topic) }
+            val consumersCount = 2
+            val consumerGroup = newConsumerGroup(consumersCount = consumersCount, subscriptionType = Failover, topic = topic, schema = schema)
+            val messageCountPerKey = 2
+            val keysCount = 10
+            val expectedMessageCount = messageCountPerKey * keysCount
+
+            producer.sendTestMessages(messageCountPerKey, keysCount)
+            val receivedMessages = consumerGroup.receiveMessages(maxCount = expectedMessageCount)
+            val receivedMessagesByConsumer = receivedMessages.groupBy { it.consumerName }
+
+            expectThat(receivedMessages).hasSize(expectedMessageCount)
+            expectThat(receivedMessagesByConsumer).hasSize(consumersCount)
+            expectThat(receivedMessagesByConsumer).doesNotContainTheSameKeyAcrossMultipleConsumers()
+            expectThat(receivedMessagesByConsumer).containsMessagesAcrossMultiplePartitionsForEachConsumer()
+        }
+
+        @Test
         fun `no partitions but messages are still consumed using the hash of the key`() = runTest(timeout = timeout) {
 
             val schema = Schema.STRING
@@ -150,28 +172,6 @@ private class PulsarExampleTests {
 
             expectThat(receivedMessages).hasSize(expectedMessageCount)
             expectThat(receivedMessagesByConsumer).hasSize(consumersCount)
-            expectThat(receivedMessagesByConsumer).containsMessagesAcrossMultiplePartitionsForEachConsumer()
-        }
-
-        @Test
-        fun `partitions and regular partitioned message consumption`() = runTest(timeout = timeout) {
-
-            val schema = Schema.STRING
-            val topic = newPersistentTopic().also { it.ensureWorks(schema = schema, numberOfPartitions = 4) }
-            val producer = newProducer(schema) { topic(topic) }
-            val consumersCount = 2
-            val consumerGroup = newConsumerGroup(consumersCount = consumersCount, subscriptionType = Failover, topic = topic, schema = schema)
-            val messageCountPerKey = 2
-            val keysCount = 10
-            val expectedMessageCount = messageCountPerKey * keysCount
-
-            producer.sendTestMessages(messageCountPerKey, keysCount)
-            val receivedMessages = consumerGroup.receiveMessages(maxCount = expectedMessageCount)
-            val receivedMessagesByConsumer = receivedMessages.groupBy { it.consumerName }
-
-            expectThat(receivedMessages).hasSize(expectedMessageCount)
-            expectThat(receivedMessagesByConsumer).hasSize(consumersCount)
-            expectThat(receivedMessagesByConsumer).doesNotContainTheSameKeyAcrossMultipleConsumers()
             expectThat(receivedMessagesByConsumer).containsMessagesAcrossMultiplePartitionsForEachConsumer()
         }
     }
