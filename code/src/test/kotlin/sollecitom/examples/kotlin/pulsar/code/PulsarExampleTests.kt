@@ -48,6 +48,9 @@ private class PulsarExampleTests {
         DebugProbes.uninstall()
     }
 
+
+
+
     @Test
     fun `sending strings using the standard Java client`() = runTest(timeout = timeout) {
 
@@ -65,6 +68,11 @@ private class PulsarExampleTests {
         expectThat(receivedMessage.value).isEqualTo(message)
     }
 
+
+
+
+
+
     @Test
     fun `sending strings using the Kotlin types`() = runTest(timeout = timeout) {
 
@@ -81,6 +89,10 @@ private class PulsarExampleTests {
 
         expectThat(receivedMessage.value).isEqualTo(message)
     }
+
+
+
+
 
     @Nested
     inner class WithTestSupport : PulsarTestSupport {
@@ -104,12 +116,18 @@ private class PulsarExampleTests {
         }
     }
 
+
+
+
+
     @Nested
     inner class PulsarVsKafka : PulsarTestSupport {
 
         override val pulsar by this@PulsarExampleTests::pulsar
         override val pulsarClient by this@PulsarExampleTests::pulsarClient
         override val pulsarAdmin by this@PulsarExampleTests::pulsarAdmin
+
+
 
         @Test
         fun `partitions and regular partitioned message consumption`() = runTest(timeout = timeout) {
@@ -133,6 +151,8 @@ private class PulsarExampleTests {
             expectThat(receivedMessagesByConsumer).containsMessagesAcrossMultiplePartitionsForEachConsumer()
         }
 
+
+
         @Test
         fun `no partitions but messages are still consumed using the hash of the key`() = runTest(timeout = timeout) {
 
@@ -153,6 +173,9 @@ private class PulsarExampleTests {
             expectThat(receivedMessagesByConsumer).hasSize(consumersCount)
             expectThat(receivedMessagesByConsumer).doesNotContainTheSameKeyAcrossMultipleConsumers()
         }
+
+
+
 
         @Test
         fun `multiple partitions but messages are still consumed in round-robin`() = runTest(timeout = timeout) {
@@ -188,6 +211,18 @@ private suspend fun KotlinProducer<String>.sendTestMessages(messageCountPerKey: 
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 private fun <T> Assertion.Builder<Map<String, List<ReceivedMessage<T>>>>.doesNotContainTheSameKeyAcrossMultipleConsumers() = compose("does not contain the same key across multiple consumers") { subject ->
 
